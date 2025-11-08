@@ -1,48 +1,81 @@
 """
-Database Schemas
+Database Schemas for CollegeMate
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model maps to a MongoDB collection using the lowercased class name.
+Example: User -> "user" collection
 """
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List
+from datetime import datetime
 
-from pydantic import BaseModel, Field
-from typing import Optional
+class AuthUser(BaseModel):
+    name: str = Field(..., min_length=2, max_length=80)
+    email: EmailStr
+    password_hash: str
+    avatar_url: Optional[str] = None
+    role: str = Field("student", description="student|admin|moderator")
+    reputation: int = 0
+    is_active: bool = True
 
-# Example schemas (replace with your own):
+class MarketItem(BaseModel):
+    title: str
+    description: Optional[str] = None
+    price: float = Field(..., ge=0)
+    category: str
+    owner_id: str
+    photos: List[str] = []  # base64 strings or URLs
+    is_sold: bool = False
 
-class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+class Club(BaseModel):
+    name: str
+    description: Optional[str] = None
+    created_by: str
+    member_ids: List[str] = []
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class Feedback(BaseModel):
+    message: str
+    category: str = Field("general")
+    anonymous: bool = True
+    user_id: Optional[str] = None
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Question(BaseModel):
+    title: str
+    body: str
+    tags: List[str] = []
+    author_id: str
+    upvotes: int = 0
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Answer(BaseModel):
+    question_id: str
+    body: str
+    author_id: str
+    upvotes: int = 0
+
+class Notification(BaseModel):
+    title: str
+    body: str
+    type: str = Field("general")
+    created_by: Optional[str] = None
+    audience: str = Field("all")
+
+class LocationPhoto(BaseModel):
+    title: str
+    lat: float
+    lng: float
+    uploaded_by: Optional[str] = None
+    image_b64: str
+
+# Utility models for responses
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+class GeoCheckRequest(BaseModel):
+    lat: float
+    lng: float
+
+class GeoCheckResponse(BaseModel):
+    inside: bool
+    distance_m: float
+    message: str
+    
